@@ -14,6 +14,9 @@ The tool works by calling a series of methods: First: find_datasets() (or find_b
 
 ```python
 from DatasetsEvaluator import DatasetsEvaluator as de
+import numpy as np
+from sklearn import tree
+from sklearn.neighbors import KNeighborsRegressor
 
 datasets_tester = de.DatasetsTester()
 matching_datasets = datasets_tester.find_datasets( 
@@ -35,7 +38,7 @@ This returns a pandas dataframe containing the list of datasets on openml.org ma
 
 The returned list may be examined and the parameters refined if desired. Alternatively, users may call datasets_tester.find_by_name() to specify a specific list of dataset names.
 
-A call is then made such as:
+A call is then made, such as:
 
     
 ```python
@@ -91,7 +94,7 @@ A dataframe with a row for each dataset on openml meeting the specified set of n
 
 **Discussion**
 
-problem_type must be either "classifiction" or "regression". All esimators will be compared using the same metric, so it is necessary that all datasets used are of the same type. 
+problem_type must be either "classification" or "regression". All estimators will be compared using the same metric, so it is necessary that all datasets used are of the same type. 
 ---
 ## find_datasets()
 
@@ -112,7 +115,7 @@ find_datasets(   problem_type,
 ```
 
 This method collects the data from openml.org, unless check_local_cache is True and the dataset is avaialble 
-in the local folder. This will collec the specifed subset of datasets identified by the most recent call 
+in the local folder. This will collect the specifed subset of datasets identified by the most recent call 
 to find_by_name() or find_datasets(). This allows users to call those methods until a suitable 
 collection of datasets have been identified.
 
@@ -120,7 +123,7 @@ collection of datasets have been identified.
 
 **problem_type**: str
 
-Either "classifiction" or "regression". All esimators will be compared using the same metric, so it is necessary that all datasets used are of the same type.
+Either "classifiction" or "regression". All estimators will be compared using the same metric, so it is necessary that all datasets used are of the same type.
 
 All other parameters are direct checks of the statistics about each dataset provided by openml.org.
 
