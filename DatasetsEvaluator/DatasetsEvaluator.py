@@ -10,11 +10,6 @@ from warnings import filterwarnings, resetwarnings
 from time import time
 from os import mkdir, listdir
 
-#todo: breast-w seems to have nonsense in the cache
-# todo: ballon seem to have 2 index columns in the cache
-# todo: baseballs seems to have many index columns. I think everytime we resave, we add a column
-
-
 class DatasetsTester():
     """
     Tool to compare predictors (classifiers or regressors) on a set of datasets collected from openml.org.
@@ -153,7 +148,9 @@ class DatasetsTester():
                      save_local_cache=False, 
                      check_local_cache=False, 
                      path_local_cache="",
-                     preview_data=False):
+                     preview_data=False,
+                     one_hot_encode=True,
+                     fill_nan_and_inf_zero=True):
         """
         This method collects the data from openml.org, unless check_local_cache is True and the dataset is avaialble 
         in the local folder. This will collec the specifed subset of datasets identified by the most recent call 
@@ -190,6 +187,15 @@ class DatasetsTester():
 
         preview_data: bool
             Indicates if the first rows of each collected dataset should be displayed
+
+        one_hot_encode: bool
+            If true, categorical columns are one-hot encoded. This is necessary for many types of predictor, but
+            may be done elsewhere, for example in a pipeline passed to the run_tests() function.
+
+        fill_nan_and_inf_zero: bool
+            If true, all instances of NaN, inf and -inf are replaced with 0.0. Replacing these values with something 
+            valid is necessary for many types of predictor, butmay be done elsewhere, for example in a pipeline passed 
+            to the run_tests() function.
 
         Returns
         -------
@@ -267,38 +273,39 @@ class DatasetsTester():
                     print(" Dataset is classification")
                     continue
 
-                dataset_df = self.__clean_dataset(dataset_df, max_cat_unique_vals)
+                dataset_df = self.__clean_dataset(dataset_df, max_cat_unique_vals, one_hot_encode, fill_nan_and_inf_zero)
                 self.dataset_collection.append((usable_dataset_idx, dataset_name, dataset_version, dataset_df, y))
                 usable_dataset_idx+=1
             else:
                 print(f" Error collecting file with did: {dataset_did}, name: {dataset_name}. Number rows in X: {len(X)}. Number rows in y: {len(y)}")
         
-    def __clean_dataset(self, X, max_cat_unique_vals):
-        # The categorical_indicator provided by openml isn't 100% reliable, so we also check panda's is_numeric_dtype
-        categorical_indicator = [False]*len(X.columns)
-        for c in range(len(X.columns)):
-            if is_numeric_dtype(X[X.columns[c]]) == False:
-                categorical_indicator[c]=True
+    def __clean_dataset(self, X, max_cat_unique_vals, one_hot_encode, fill_nan_and_inf_zero):
         
         # One-hot encode the categorical columns
-        # todo: make this a parameter
-        new_df = pd.DataFrame()
-        for c in range(len(categorical_indicator)):
-            col_name = X.columns[c]
-            if categorical_indicator[c] == True:
-                if X[col_name].nunique() > max_cat_unique_vals:
-                    pass
+        if one_hot_encode:
+            # The categorical_indicator provided by openml isn't 100% reliable, so we also check panda's is_numeric_dtype
+            categorical_indicator = [False]*len(X.columns)
+            for c in range(len(X.columns)):
+                if is_numeric_dtype(X[X.columns[c]]) == False:
+                    categorical_indicator[c]=True
+
+            new_df = pd.DataFrame()
+            for c in range(len(categorical_indicator)):
+                col_name = X.columns[c]
+                if categorical_indicator[c] == True:
+                    if X[col_name].nunique() > max_cat_unique_vals:
+                        pass
+                    else:
+                        one_hot_cols = pd.get_dummies(X[col_name], prefix=col_name, dummy_na=True, drop_first=False)
+                        new_df = pd.concat([new_df, one_hot_cols], axis=1)
                 else:
-                    one_hot_cols = pd.get_dummies(X[col_name], prefix=col_name, dummy_na=True, drop_first=False)
-                    new_df = pd.concat([new_df, one_hot_cols], axis=1)
-            else:
-                new_df[col_name] = X[col_name]
-        X = new_df
+                    new_df[col_name] = X[col_name]
+            X = new_df
 
         # Remove any NaN or inf values
-        # todo: make this a parameter
-        X = X.fillna(0.0)
-        X = X.replace([np.inf, -np.inf], 0.0)                        
+        if fill_nan_and_inf_zero:
+            X = X.fillna(0.0)
+            X = X.replace([np.inf, -np.inf], 0.0)                        
         
         return X.reset_index(drop=True)
     
