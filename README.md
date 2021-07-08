@@ -37,7 +37,9 @@ matching_datasets = datasets_tester.find_datasets(
 ```
 This returns a pandas dataframe containing the list of datasets on openml.org matching the provided criteria. In this example, we're specifying datasets with between 500 and 5,000 rows, between 2 and 50 numeric columns, and so on.
 
-The returned list may be examined and the parameters refined if desired. Alternatively, users may call datasets_tester.find_by_name() to specify a specific list of dataset names.
+The returned list may be examined and the parameters refined if desired. 
+
+Alternatively, users may call datasets_tester.find_by_name() to request a list of specific dataset names as returned by the OpenML API.
 
 A call is then made, such as:
 
