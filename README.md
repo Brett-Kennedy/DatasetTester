@@ -17,6 +17,7 @@ from DatasetsEvaluator import DatasetsEvaluator as de
 import numpy as np
 from sklearn import tree
 from sklearn.neighbors import KNeighborsRegressor
+from IPython.display import display
 
 datasets_tester = de.DatasetsTester()
 matching_datasets = datasets_tester.find_datasets( 
@@ -86,15 +87,14 @@ Identifies, but does not collect, the set of datasets meeting the specified set 
 
 **names_arr** : array of dataset names
 
-**problem_type** : str
+**problem_type**: str
+
+Either "classifiction" or "regression". All estimators will be compared using the same metric, so it is necessary that all datasets used are of the same type.
 
 **Return Type**
 
 A dataframe with a row for each dataset on openml meeting the specified set of names.
 
-**Discussion**
-
-problem_type must be either "classification" or "regression". All estimators will be compared using the same metric, so it is necessary that all datasets used are of the same type. 
 ---
 ## find_datasets()
 
@@ -153,7 +153,7 @@ The maximum number of datasets to collect.
 
 **method_pick_sets**: str
     
-If only a subset of the full set of matches are to be collected, this identifies if those will be selected randomly, or simply using the first matches
+Either 'pick_first' or 'pick_random'. If only a subset of the full set of matches are to be collected, this identifies if those will be selected randomly, or simply using the first matches
 
 **max_cat_unique_vals**: int
     
