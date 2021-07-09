@@ -31,8 +31,8 @@ class DatasetsTester():
         names_arr: array of dataset names
 
         problem_type: str
-            Either "classifiction" or "regression"         
-            All esimators will be compared using the same metric, so it is necessary that all
+            Either "classification" or "regression"         
+            All estimators will be compared using the same metric, so it is necessary that all
             datasets used are of the same type.
 
         Returns
@@ -67,8 +67,8 @@ class DatasetsTester():
         Parameters
         ----------
         problem_type: str
-            Either "classifiction" or "regression".        
-            All esimators will be compared using the same metric, so it is necessary that all
+            Either "classification" or "regression".        
+            All estimators will be compared using the same metric, so it is necessary that all
             datasets used are of the same type.
 
         All other parameters are direct checks of the statistics about each dataset provided by openml.org.
