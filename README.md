@@ -155,7 +155,7 @@ The maximum number of datasets to collect.
 
 **method_pick_sets**: str
     
-Either 'pick_first' or 'pick_random'. If only a subset of the full set of matches are to be collected, this identifies if those will be selected randomly, or simply using the first matches
+Either 'pick_first' or 'pick_random'. If only a subset of the full set of matches are to be collected, this identifies if those will be selected randomly, or simply using the first matches.
 
 **max_cat_unique_vals**: int
     
@@ -167,11 +167,11 @@ If False, for each set of datasets with the same name, only the one with the hig
 
 **save_local_cache**: bool
     
-If True, any collected datasets will be saved locally in path_local_cache
+If True, any collected datasets will be saved locally in path_local_cache.
 
 **check_local_cache**: bool
     
-If True, before collecting any datasets from openml.org, each will be checked to determine if it is already stored locally in path_local_cache
+If True, before collecting any datasets from openml.org, each will be checked to determine if it is already stored locally in path_local_cache.
 
 **path_local_cache**: str
 
@@ -179,7 +179,7 @@ Folder identify the local cache of datasets, stored in .csv format.
 
 **preview_data**: bool
     
-Indicates if the first rows of each collected dataset should be displayed
+Indicates if the first rows of each collected dataset should be displayed.
 
 
 **Return Type**
@@ -203,14 +203,14 @@ run_tests(estimators_arr, num_cv_folds=5, scoring_metric='', show_warnings=False
 
 **estimators_arr**: array of tuples, with each tuple containing: 
         
-+ str: estimator name, 
-+ str: a description of the features used
-+ str: a description of the hyperparameters used
-+ estimator: the estimator to be used. This should not be fit yet, just have the hyperparameters set.
++ str: estimator name, such as "Decision Tree" or "kNN".
++ str: a description of the features used, such as "Original Features".
++ str: a description of the hyperparameters used. For "Decision Tree", "min_samples_split=X, max_depth=X". For "kNN", "n_neighbors=X".
++ estimator: the estimator to be used. This should not be fit yet, just have the hyperparameters set as dt_X or kNN_X.
 
 **num_cv_folds**: (int)
     
-The number of folds to be used in the cross validation process used to evaluate the predictor
+The number of folds to be used in the cross validation process used to evaluate the predictor.
 
 **scoring_metric**: (str) 
     
