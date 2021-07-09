@@ -45,7 +45,12 @@ class DatasetsTester():
         self.openml_df = openml.datasets.list_datasets(output_format="dataframe")
         self.openml_df = self.openml_df[self.openml_df.name.isin(names_arr)]
         return self.openml_df
-        
+    
+    def find_by_tag(self, my_tag):
+        self.problem_type = problem_type
+        self.openml_df = openml.datasets.list_datasets(tag=my_tag, output_format="dataframe")
+        return self.openml_df
+    
     def find_datasets(self, 
                      problem_type, 
                      min_num_classes=2,
@@ -62,7 +67,7 @@ class DatasetsTester():
                      max_num_categorical_features=50):
         """
         Identifies, but does not collect, the set of datasets meeting the specified set of names.
-        This or find_by_name() must be called to identify the potential set of datasets to be collected.
+        This, find_by_name(), or find_by_tag() must be called to identify the potential set of datasets to be collected.
 
         Parameters
         ----------
