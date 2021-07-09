@@ -402,7 +402,7 @@ class DatasetsTester():
             except:
                 pass
 
-        print(f"\nRunning test on {len(self.dataset_collection)} datastets")
+        print(f"\nRunning test on {len(self.dataset_collection)} datasets")
         for dataset_tuple in self.dataset_collection: 
             dataset_index, dataset_name, version, X, y = dataset_tuple
             if (dataset_index < starting_point):
@@ -536,7 +536,7 @@ class DatasetsTester():
             except:
                 pass            
 
-        print(f"\nRunning test on {len(self.dataset_collection)} datastets")
+        print(f"\nRunning test on {len(self.dataset_collection)} datasets")
         for dataset_tuple in self.dataset_collection: 
             dataset_index, dataset_name, version, X, y = dataset_tuple
             if (dataset_index < starting_point):
