@@ -9,6 +9,7 @@ from statistics import mean, stdev
 from warnings import filterwarnings, resetwarnings
 from time import time
 from os import mkdir, listdir
+from shutil import rmtree
 
 class DatasetsTester():
     """
@@ -143,6 +144,7 @@ class DatasetsTester():
     def collect_data(self, 
                      max_num_datasets_used=-1,
                      method_pick_sets="pick_first",
+                     exclude_list=None,
                      max_cat_unique_vals = 20,
                      keep_duplicated_names=False,
                      save_local_cache=False, 
@@ -165,6 +167,9 @@ class DatasetsTester():
         method_pick_sets: str
             If only a subset of the full set of matches are to be collected, this identifies if those
             will be selected randomly, or simply using the first matches
+
+        exclude_list: array
+            list of names of datasets to exclude
 
         max_cat_unique_vals: int
             As categorical columns are one-hot encoded, it may not be desirable to one-hot encode categorical
@@ -229,6 +234,9 @@ class DatasetsTester():
             dataset_did = int(openml_subset_df.iloc[dataset_idx].did)
             dataset_name = openml_subset_df.iloc[dataset_idx]['name']
             dataset_version = openml_subset_df.iloc[dataset_idx]['version']
+
+            if not exclude_list is None and dataset_name in exclude_list:
+                continue
 
             dataset_df = None
             if check_local_cache: 
@@ -531,8 +539,12 @@ class DatasetsTester():
         print(f"\nRunning test on {len(self.dataset_collection)} datastets")
         for dataset_tuple in self.dataset_collection: 
             dataset_index, dataset_name, version, X, y = dataset_tuple
+            if (dataset_index < starting_point):
+                continue
+            if (dataset_index >= ending_point):
+                continue            
             X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
-            print(f"Running tests on dataset: {dataset_name}")
+            print(f"Running tests on dataset: {dataset_index}: {dataset_name}")
             for estimator_idx, estimator_desc in enumerate(self.estimators_arr):
                 model_name, engineering_description, hyperparameters_description, estimator = estimator_desc
                 parameters = self.parameters_arr[estimator_idx]
@@ -577,11 +589,11 @@ class DatasetsTester():
             if (partial_result_folder != ""):
                 intermediate_file_name = partial_result_folder + "\\intermediate_" + str(dataset_index) + ".csv"
                 summary_df.to_csv(intermediate_file_name, index=False)
-
+ 
         resetwarnings()
 
         if starting_point>0 and partial_result_folder != "":
-            summary_df = get_previous_results(summary_df, partial_result_folder)
+            summary_df = self.get_previous_results(summary_df, partial_result_folder)
         
         return summary_df.reset_index(drop=True)
 
@@ -613,5 +625,9 @@ class DatasetsTester():
                                                         "Model", 
                                                         "Feature Engineering Description", 
                                                         "Hyperparameter Description"], 
-                                                keep="last")           
+                                                keep="last")  
+        try:
+            shutil.rmtree(partial_result_folder)
+        except:
+            pass                                                         
         return summary_df
