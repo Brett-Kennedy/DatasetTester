@@ -91,7 +91,7 @@ Identifies, but does not collect, the set of datasets meeting the specified set 
 
 **problem_type**: str
 
-Either "classifiction" or "regression". All estimators will be compared using the same metric, so it is necessary that all datasets used are of the same type.
+Either "classification" or "regression". All estimators will be compared using the same metric, so it is necessary that all datasets used are of the same type.
 
 **Return Type**
 
