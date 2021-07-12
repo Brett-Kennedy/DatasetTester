@@ -100,13 +100,13 @@ A dataframe with a row for each dataset on openml meeting the specified set of n
 ## find_by_tag()
 
 ```
-find_by_tag(tags_arr, problem_type)
+find_by_tag(my_tag, problem_type)
 ```
-Identifies, but does not collect, the set of datasets meeting the specified set of tags.
+Identifies, but does not collect, the set of datasets attached to the specified tag.
 
 **Parameters**
 
-**names_arr** : array of dataset tags
+**my_tag** : a dataset tag
 
 **problem_type**: str
 
