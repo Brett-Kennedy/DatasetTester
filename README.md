@@ -39,7 +39,7 @@ This returns a pandas dataframe containing the list of datasets on openml.org ma
 
 The returned list may be examined and the parameters refined if desired. 
 
-Alternatively, users may call datasets_tester.find_by_name() to request a list of specific dataset names as returned by the OpenML API.
+Alternatively, users may call datasets_tester.find_by_name() or datasets_tester.find_by_tag() to request a list of specific dataset names or tags as returned by the OpenML API.
 
 A call is then made, such as:
 
@@ -48,7 +48,7 @@ A call is then made, such as:
 datasets_tester.collect_data()
 ```
 
-This will return all datasets identified by the previous call to find_datasets() or find_by_name(). Alternatively, users may specify to return a subset of the datasets identified, for example:
+This will return all datasets identified by the previous call to find_datasets(), find_by_tag(), or find_by_name(). Alternatively, users may specify to return a subset of the datasets identified, for example:
 
 ```python
 datasets_tester.collect_data(max_num_datasets_used=5, method_pick_sets='pick_first', keep_duplicated_names=False)
@@ -97,6 +97,25 @@ Either "classifiction" or "regression". All estimators will be compared using th
 
 A dataframe with a row for each dataset on openml meeting the specified set of names.
 
+## find_by_tag()
+
+```
+find_by_tag(tags_arr, problem_type)
+```
+Identifies, but does not collect, the set of datasets meeting the specified set of tags.
+
+**Parameters**
+
+**names_arr** : array of dataset tags
+
+**problem_type**: str
+
+Either "classification" or "regression". All estimators will be compared using the same metric, so it is necessary that all datasets used are of the same type.
+
+**Return Type**
+
+A dataframe with a row for each dataset on openml meeting the specified set of names.
+
 ---
 ## find_datasets()
 
@@ -125,7 +144,7 @@ collection of datasets have been identified.
 
 **problem_type**: str
 
-Either "classifiction" or "regression". All estimators will be compared using the same metric, so it is necessary that all datasets used are of the same type.
+Either "classification" or "regression". All estimators will be compared using the same metric, so it is necessary that all datasets used are of the same type.
 
 All other parameters are direct checks of the statistics about each dataset provided by openml.org.
 
