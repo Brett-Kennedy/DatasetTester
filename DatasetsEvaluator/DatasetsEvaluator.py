@@ -47,6 +47,24 @@ class DatasetsTester():
         return self.openml_df
     
     def find_by_tag(self, my_tag):
+        """
+        Identifies, but does not collect, the set of datasets attached to the specified tag.
+
+        Parameters
+        ----------
+        my_tag: the dataset tag
+
+        problem_type: str
+            Either "classification" or "regression"         
+            All estimators will be compared using the same metric, so it is necessary that all
+            datasets used are of the same type.
+
+        Returns
+        -------
+        dataframe with a row for each dataset on openml meeting the specified tag. 
+
+        """
+        
         self.problem_type = problem_type
         self.openml_df = openml.datasets.list_datasets(tag=my_tag, output_format="dataframe")
         return self.openml_df
