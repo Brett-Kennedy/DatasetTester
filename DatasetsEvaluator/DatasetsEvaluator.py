@@ -46,7 +46,7 @@ class DatasetsTester():
         self.openml_df = self.openml_df[self.openml_df.name.isin(names_arr)]
         return self.openml_df
     
-    def find_by_tag(self, my_tag):
+    def find_by_tag(self, my_tag, problem_type):
         """
         Identifies, but does not collect, the set of datasets attached to the specified tag.
 
