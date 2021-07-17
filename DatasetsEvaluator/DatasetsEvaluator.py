@@ -453,7 +453,6 @@ class DatasetsTester():
 
         self.__create_folders(starting_point, ending_point, partial_result_folder, results_folder)
 
-<<<<<<< HEAD
         print(f"\nRunning test on {len(self.dataset_collection)} datastets")
 
         if run_parallel == False:
@@ -488,9 +487,7 @@ class DatasetsTester():
 
 
     def run_subset(self, summary_df, starting_point, ending_point, partial_result_folder, num_cv_folds, scoring_metric, scoring_metric_specified):
-=======
         print(f"\nRunning test on {len(self.dataset_collection)} datasets")
->>>>>>> 3ba0d9822bf4c8a05a1e1e9cb3878216bb865d7c
         for dataset_tuple in self.dataset_collection: 
             dataset_index, dataset_name, version, X, y = dataset_tuple
             # Normally the dataset_index values are sequential within the dataset_collection, but
@@ -612,7 +609,6 @@ class DatasetsTester():
 
         self.__create_folders(starting_point, ending_point, partial_result_folder, results_folder)        
 
-<<<<<<< HEAD
         print(f"\nRunning test on {len(self.dataset_collection)} datastets")
         if run_parallel == False:
             summary_df = self.run_subset_cvgridsearch(summary_df, starting_point, ending_point, partial_result_folder, num_cv_folds, scoring_metric, scoring_metric_specified)
@@ -646,9 +642,7 @@ class DatasetsTester():
 
 
     def run_subset_cvgridsearch(self, summary_df, starting_point, ending_point, partial_result_folder, num_cv_folds, scoring_metric, scoring_metric_specified):
-=======
         print(f"\nRunning test on {len(self.dataset_collection)} datasets")
->>>>>>> 3ba0d9822bf4c8a05a1e1e9cb3878216bb865d7c
         for dataset_tuple in self.dataset_collection: 
             dataset_index, dataset_name, version, X, y = dataset_tuple
             if (dataset_index < starting_point):
