@@ -3,13 +3,20 @@ import numpy as np
 import openml
 from pandas.api.types import is_numeric_dtype
 from sklearn.model_selection import cross_validate, train_test_split, GridSearchCV
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, mean_squared_error
 from sklearn.pipeline import Pipeline
 from statistics import mean, stdev
 from warnings import filterwarnings, resetwarnings
 from time import time
+from datetime import datetime
 from os import mkdir, listdir
 from shutil import rmtree
+from multiprocessing import Pool, Process, freeze_support
+import concurrent
+import sys
+from math import floor
+from os import cpu_count
+
 
 class DatasetsTester():
     """
@@ -316,11 +323,22 @@ class DatasetsTester():
             X = X.replace([np.inf, -np.inf], 0.0)                        
         
         return X.reset_index(drop=True)
+
     
     def get_dataset_collection(self):
         return self.dataset_collection
 
-    def run_tests(self, estimators_arr, num_cv_folds=5, scoring_metric='', show_warnings=False, starting_point=0, ending_point=np.inf, partial_result_folder=""):
+
+    def run_tests(  self, 
+                    estimators_arr, 
+                    num_cv_folds=5, 
+                    scoring_metric='', 
+                    show_warnings=False, 
+                    starting_point=0, 
+                    ending_point=np.inf, 
+                    partial_result_folder="",
+                    results_folder="", 
+                    run_parallel=False): 
         """
         Evaluate all estimators on all datasets. 
         
@@ -349,18 +367,32 @@ class DatasetsTester():
             where previous calls to this method set ending_point
 
         ending_point: int
-            This may be used to divide up the datasets, potentially to 
+            This may be used to divide up the datasets, potentially to spread the work over a period of time, or 
+            to use some datasets purely for testing.
 
         partial_result_folder: string
             path to folder where partial results are saved. 
+
+        results_folder: string
+            path to folder where results are saved.         
+
+        run_parallel: bool
+            If set to True, the datasets will be tested in parallel. This speeds up computation, but is set to 
+            False by default as it makes the print output harder to follow and the process of recovering from
+            partial runs more complicated. 
 
         Returns
         -------
         a dataframe summarizing the performance of the estimators on each dataset. There is one row
         for each combination of dataset and estimator. 
+
+        the name of the saved results if any were saved
         """
 
         self.estimators_arr = estimators_arr
+
+        # if n_jobs==-1:
+        #     n_jobs = cpu_count()
 
         scoring_metric_specified = True
         if self.problem_type == "classification":
@@ -396,18 +428,49 @@ class DatasetsTester():
         else:
             filterwarnings('ignore')
 
-        if starting_point==0 and partial_result_folder != "":
-            try:
-                mkdir(partial_result_folder)
-            except:
-                pass
+        self.__create_folders(starting_point, ending_point, partial_result_folder, results_folder)
 
         print(f"\nRunning test on {len(self.dataset_collection)} datastets")
+
+        if run_parallel == False:
+            summary_df = self.run_subset(summary_df, starting_point, ending_point, partial_result_folder, num_cv_folds, scoring_metric, scoring_metric_specified)
+        else:
+            ending_point = min(ending_point, len(self.dataset_collection)-1)
+            process_arr = []
+            with concurrent.futures.ProcessPoolExecutor() as executor:
+                for dataset_idx in range(starting_point, ending_point+1):
+                    print(f"Starting process for dataset: {dataset_idx}")
+                    f = executor.submit(self.run_subset, summary_df, dataset_idx, dataset_idx, partial_result_folder, num_cv_folds, scoring_metric, scoring_metric_specified)
+                    process_arr.append(f)
+                for f in process_arr:
+                    summary_df = summary_df.append(f.result())
+
+        resetwarnings()
+
+        if starting_point>0 and partial_result_folder != "":
+            summary_df = self.__get_previous_results(summary_df, partial_result_folder)
+
+        summary_file_name = ""
+        if ending_point >= (len(self.dataset_collection)-1) and results_folder != "":
+            n = datetime.now()
+            dt_string = n.strftime("%d_%m_%Y_%H_%M_%S")
+            summary_file_name = "results_" + dt_string
+            final_file_name = results_folder + "\\" + summary_file_name + ".csv"
+            summary_df.to_csv(final_file_name, index=False)
+
+        self.__remove_partial_results(partial_result_folder)
+
+        return summary_df.reset_index(drop=True), summary_file_name
+
+
+    def run_subset(self, summary_df, starting_point, ending_point, partial_result_folder, num_cv_folds, scoring_metric, scoring_metric_specified):
         for dataset_tuple in self.dataset_collection: 
             dataset_index, dataset_name, version, X, y = dataset_tuple
+            # Normally the dataset_index values are sequential within the dataset_collection, but
+            # this handles where they are not. 
             if (dataset_index < starting_point):
                 continue
-            if (dataset_index >= ending_point):
+            if (dataset_index > ending_point):
                 continue
             print(f"Running tests on dataset index: {dataset_index}, dataset: {dataset_name}")
             for estimator_desc in self.estimators_arr:
@@ -449,44 +512,34 @@ class DatasetsTester():
                                model_complexity,
                                avg_fit_time]
                 summary_df = summary_df.append(pd.DataFrame([summary_row], columns=summary_df.columns))
-            
+
             if (partial_result_folder != ""):
                 intermediate_file_name = partial_result_folder + "\\intermediate_" + str(dataset_index) + ".csv"
                 summary_df.to_csv(intermediate_file_name, index=False)
-        
-        resetwarnings()
 
-        if starting_point>0 and partial_result_folder != "":
-            summary_df = self.get_previous_results(summary_df, partial_result_folder)
+        return summary_df
 
-        return summary_df.reset_index(drop=True)
 
-    def run_tests_grid_search(self, estimators_arr, parameters_arr, num_cv_folds=5, scoring_metric='', show_warnings=False, starting_point=0, ending_point=np.inf, partial_result_folder=""):
+    def run_tests_grid_search(  self, 
+                                estimators_arr, 
+                                parameters_arr, 
+                                num_cv_folds=5, 
+                                scoring_metric='', 
+                                show_warnings=False, 
+                                starting_point=0, 
+                                ending_point=np.inf, 
+                                partial_result_folder="",
+                                results_folder="",
+                                run_parallel=False):
         """
         Evaluate all estimators on all datasets. 
         
         Parameters
         ----------
-        estimators_arr: array of tuples, with each tuple containing: 
-            str: estimator name, 
-            str: a description of the features used
-            str: a description of the hyperparameters used
-            estimator: the estimator to be used. This should not be fit yet, just have the hyperparameters set.
+        All parameters are the same as in run_tests() with the addition of:
 
         parameters_arr: array of dictionaries
             Each dictionary describes the range of parameters to be tested on the matching estimator
-
-        num_cv_folds: int
-            the number of folds to be used in the cross validation process used to evaluate the predictor
-
-        scoring_metric: str
-            one of the set of scoring metrics supported by sklearn. Set to '' to indicate to use the default.
-            The default for classification is f1_macro and for regression is neg_root_mean_squared_error.
-
-        show_warnings: bool
-            if True, warnings will be presented for calls to cross_validate(). These can get very long in in some
-            cases may affect only a minority of the dataset-predictor combinations, so is False by default. Users
-            may wish to set to True to determine the causes of any NaNs in the final summary dataframe.   
 
         Returns
         -------
@@ -530,18 +583,46 @@ class DatasetsTester():
         else:
             filterwarnings('ignore')
 
-        if starting_point==0 and partial_result_folder != "":
-            try:
-                mkdir(partial_result_folder)
-            except:
-                pass            
+        self.__create_folders(starting_point, ending_point, partial_result_folder, results_folder)        
 
         print(f"\nRunning test on {len(self.dataset_collection)} datastets")
+        if run_parallel == False:
+            summary_df = self.run_subset_cvgridsearch(summary_df, starting_point, ending_point, partial_result_folder, num_cv_folds, scoring_metric, scoring_metric_specified)
+        else:
+            datasets_per_process = self.__get_datasets_per_process(starting_point, ending_point, n_jobs)            
+            process_arr = []
+            with concurrent.futures.ProcessPoolExecutor() as executor:
+                for dataset_idx in range(starting_point, ending_point+1):
+                    print(f"Starting process for dataset: {dataset_idx}")
+                    f = executor.submit(self.run_subset_cvgridsearch, summary_df, dataset_idx, dataset_idx, partial_result_folder, num_cv_folds, scoring_metric, scoring_metric_specified)
+                    process_arr.append(f)
+                for f in process_arr:
+                    summary_df = summary_df.append(f.result())
+
+        resetwarnings()
+
+        if starting_point>0 and partial_result_folder != "":
+            summary_df = self.__get_previous_results(summary_df, partial_result_folder)
+    
+        summary_file_name = ""
+        if ending_point >= (len(self.dataset_collection)-1) and results_folder != "":
+            n = datetime.now()
+            dt_string = n.strftime("%d_%m_%Y_%H_%M_%S")
+            summary_file_name = "results_" + dt_string
+            final_file_name = results_folder + "\\" + summary_file_name + ".csv"
+            summary_df.to_csv(final_file_name, index=False)
+
+        self.__remove_partial_results(partial_result_folder)
+
+        return summary_df.reset_index(drop=True), summary_file_name
+
+
+    def run_subset_cvgridsearch(self, summary_df, starting_point, ending_point, partial_result_folder, num_cv_folds, scoring_metric, scoring_metric_specified):
         for dataset_tuple in self.dataset_collection: 
             dataset_index, dataset_name, version, X, y = dataset_tuple
             if (dataset_index < starting_point):
                 continue
-            if (dataset_index >= ending_point):
+            if (dataset_index > ending_point):
                 continue            
             X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
             print(f"Running tests on dataset: {dataset_index}: {dataset_name}")
@@ -555,12 +636,24 @@ class DatasetsTester():
                 end_time = time()
                 y_pred_train = gs_estimator.predict(X_train)  
                 y_pred_test = gs_estimator.predict(X_test) 
-                train_score = f1_score(list(y_pred_train), list(y_train), average="macro") 
-                test_score = f1_score(list(y_pred_test), list(y_test), average="macro") 
-                if scoring_metric_specified == False and self.problem_type == "regression":
-                    # Convert from neg_root_mean_squared_error to NRMSE
-                    train_score = abs(train_score/(y.mean()))                        
-                    test_score = abs(test_score/(y.mean()))                                        
+
+                if (self.problem_type=="classification"):
+                    if scoring_metric=="f1_macro":
+                        train_score = f1_score(list(y_pred_train), list(y_train), average="macro") 
+                        test_score = f1_score(list(y_pred_test), list(y_test), average="macro") 
+                    else:
+                        assert False, "Only f1_macro currently supported."
+                else:
+                    if self.problem_type == "regression":
+                        if scoring_metric_specified == False or scoring_metric == "neg_root_mean_squared_error" or scoring_metric == "NRMSE":
+                            train_score = (-1)*mean_squared_error(y_train, y_pred_train)
+                            test_score = (-1)*mean_squared_error(y_test, y_pred_test)
+                            if (scoring_metric_specified == False):
+                                # Convert from neg_root_mean_squared_error to NRMSE
+                                train_score = abs(train_score/(y.mean()))                        
+                                test_score = abs(test_score/(y.mean()))                                        
+                    else:
+                        assert False, "Only NRMSE and neg_root_mean_squared_error currently supported,"
 
                 print("\ttest_score: ", test_score)  
 
@@ -590,12 +683,8 @@ class DatasetsTester():
                 intermediate_file_name = partial_result_folder + "\\intermediate_" + str(dataset_index) + ".csv"
                 summary_df.to_csv(intermediate_file_name, index=False)
  
-        resetwarnings()
+        return summary_df
 
-        if starting_point>0 and partial_result_folder != "":
-            summary_df = self.get_previous_results(summary_df, partial_result_folder)
-        
-        return summary_df.reset_index(drop=True)
 
     def check_model_complexity(self, estimators_arr):
         if hasattr(estimators_arr[0], "tree_"):
@@ -612,7 +701,26 @@ class DatasetsTester():
             model_complexity = 0
         return model_complexity
 
-    def get_previous_results(self, summary_df, partial_result_folder):
+
+    def __create_folders(self, starting_point, ending_point, partial_result_folder, results_folder):
+        if starting_point==0 and partial_result_folder != "":
+            try:
+                mkdir(partial_result_folder)
+            except FileExistsError as e:  
+                pass 
+            except Exception as e:
+                print(f"Error creating partial results folder: {e}")
+
+        if ending_point >= len(self.dataset_collection) and results_folder != "":
+            try:
+                mkdir(results_folder)
+            except FileExistsError as e:  
+                pass 
+            except Exception as e:
+                print(f"Error creating partial results folder: {e}")
+
+
+    def __get_previous_results(self, summary_df, partial_result_folder):
         # Load in partial the results from previous runs and combine the results
         prev_res = listdir(partial_result_folder)
         for f in prev_res:
@@ -627,7 +735,18 @@ class DatasetsTester():
                                                         "Hyperparameter Description"], 
                                                 keep="last")  
         try:
-            shutil.rmtree(partial_result_folder)
-        except:
-            pass                                                         
+            rmtree(partial_result_folder)
+        except Exception as e:
+            print("Error deleting partial results folder: {e}")                                                         
         return summary_df
+
+
+    def __remove_partial_results(self, partial_result_folder):
+        if partial_result_folder == "":
+            return
+        try:
+            rmtree(partial_result_folder)
+        except Exception as e:
+            print(f"Error deleting partial results folder: {partial_result_folder}. Error: {e}")                                                         
+
+
