@@ -52,7 +52,30 @@ class DatasetsTester():
         self.openml_df = openml.datasets.list_datasets(output_format="dataframe")
         self.openml_df = self.openml_df[self.openml_df.name.isin(names_arr)]
         return self.openml_df
+    
+    def find_by_tag(self, my_tag, problem_type):
+        """
+        Identifies, but does not collect, the set of datasets attached to the specified tag.
+
+        Parameters
+        ----------
+        my_tag: the dataset tag
+
+        problem_type: str
+            Either "classification" or "regression"         
+            All estimators will be compared using the same metric, so it is necessary that all
+            datasets used are of the same type.
+
+        Returns
+        -------
+        dataframe with a row for each dataset on openml meeting the specified tag. 
+
+        """
         
+        self.problem_type = problem_type
+        self.openml_df = openml.datasets.list_datasets(tag=my_tag, output_format="dataframe")
+        return self.openml_df
+    
     def find_datasets(self, 
                      problem_type, 
                      min_num_classes=2,
@@ -69,7 +92,7 @@ class DatasetsTester():
                      max_num_categorical_features=50):
         """
         Identifies, but does not collect, the set of datasets meeting the specified set of names.
-        This or find_by_name() must be called to identify the potential set of datasets to be collected.
+        This, find_by_name(), or find_by_tag() must be called to identify the potential set of datasets to be collected.
 
         Parameters
         ----------
@@ -430,6 +453,7 @@ class DatasetsTester():
 
         self.__create_folders(starting_point, ending_point, partial_result_folder, results_folder)
 
+<<<<<<< HEAD
         print(f"\nRunning test on {len(self.dataset_collection)} datastets")
 
         if run_parallel == False:
@@ -464,6 +488,9 @@ class DatasetsTester():
 
 
     def run_subset(self, summary_df, starting_point, ending_point, partial_result_folder, num_cv_folds, scoring_metric, scoring_metric_specified):
+=======
+        print(f"\nRunning test on {len(self.dataset_collection)} datasets")
+>>>>>>> 3ba0d9822bf4c8a05a1e1e9cb3878216bb865d7c
         for dataset_tuple in self.dataset_collection: 
             dataset_index, dataset_name, version, X, y = dataset_tuple
             # Normally the dataset_index values are sequential within the dataset_collection, but
@@ -585,6 +612,7 @@ class DatasetsTester():
 
         self.__create_folders(starting_point, ending_point, partial_result_folder, results_folder)        
 
+<<<<<<< HEAD
         print(f"\nRunning test on {len(self.dataset_collection)} datastets")
         if run_parallel == False:
             summary_df = self.run_subset_cvgridsearch(summary_df, starting_point, ending_point, partial_result_folder, num_cv_folds, scoring_metric, scoring_metric_specified)
@@ -618,6 +646,9 @@ class DatasetsTester():
 
 
     def run_subset_cvgridsearch(self, summary_df, starting_point, ending_point, partial_result_folder, num_cv_folds, scoring_metric, scoring_metric_specified):
+=======
+        print(f"\nRunning test on {len(self.dataset_collection)} datasets")
+>>>>>>> 3ba0d9822bf4c8a05a1e1e9cb3878216bb865d7c
         for dataset_tuple in self.dataset_collection: 
             dataset_index, dataset_name, version, X, y = dataset_tuple
             if (dataset_index < starting_point):
