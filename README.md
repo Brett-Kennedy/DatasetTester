@@ -78,7 +78,7 @@ An example notebook provides further examples.
 
 ## Methods
 
-## find_by_name()
+### find_by_name()
 
 ```
 find_by_name(names_arr, problem_type)
@@ -97,7 +97,8 @@ Either "classification" or "regression". All estimators will be compared using t
 
 A dataframe with a row for each dataset on openml meeting the specified set of names.
 
-## find_by_tag()
+---
+### find_by_tag()
 
 ```
 find_by_tag(my_tag, problem_type)
@@ -117,7 +118,7 @@ Either "classification" or "regression". All estimators will be compared using t
 A dataframe with a row for each dataset on openml meeting the specified set of names.
 
 ---
-## find_datasets()
+### find_datasets()
 
 ```
 find_datasets(   problem_type, 
@@ -242,4 +243,20 @@ if True, warnings will be presented for calls to cross_validate(). These can get
 **Return Type**
 
 A dataframe summarizing the performance of the estimators on each dataset. There is one row for each combination of dataset and estimator. 
+
+---
+## run_subset_cvgridsearch()
+
+---
+## get_dataset_collection()
+
+---
+## get_dataset(dataset_name)
+
+---
+## summarize_results()
+
+---
+## plot_results()
+
 
