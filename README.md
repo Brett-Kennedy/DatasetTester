@@ -159,7 +159,7 @@ dataframe with a row for each dataset on openml meeting the specified set of cri
 
 ```
 def collect_data(max_num_datasets_used=-1,
-                 method_pick_sets="pick_first",
+                 method_pick_sets="pick_random",
                  max_cat_unique_vals = 20,
                  keep_duplicated_names=False,
                  save_local_cache=False, 
@@ -175,7 +175,7 @@ The maximum number of datasets to collect.
 
 **method_pick_sets**: str
     
-Either 'pick_first' or 'pick_random'. If only a subset of the full set of matches are to be collected, this identifies if those will be selected randomly, or simply using the first matches.
+Either 'pick_first' or 'pick_random'. If only a subset of the full set of matches are to be collected, this identifies if those will be selected randomly, or simply using the first matches. Using 'pick_random' is preferred, as it removes any bias towards selecting files towards the beginning of the collection. 
 
 **max_cat_unique_vals**: int
     
