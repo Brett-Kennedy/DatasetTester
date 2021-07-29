@@ -83,7 +83,7 @@ An example notebook provides further examples.
 ```
 find_by_name(names_arr, problem_type)
 ```
-Identifies, but does not collect, the set of datasets meeting the specified set of names.
+Identifies, but does not collect, the set of datasets meeting the specified set of names. In many cases, multiple versions of the same file may be returned. 
 
 **Parameters**
 
