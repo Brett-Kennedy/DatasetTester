@@ -1,5 +1,7 @@
 # DatasetsEvaluator
-DatasetTester is a tool to collect datasets from openml.org and make it easier to test predictors (classifiers or regressors) against these files. Our hope is this eases the work required to test predictors and so encourages researchers to test predictors against larger numbers of datasets, taking greater advantage of the collection on openml.org. Ideally, this can lead to greater accuracy and reduced bias in the evaluation of ML tools. 
+DatasetTester is a tool to collect datasets from openml.org and make it easier to test predictors (classifiers or regressors) against these files. Our hope is this eases the work required to test predictors and so encourages researchers to test predictors against larger numbers of datasets, taking greater advantage of the collection on openml.org. Ideally, this can lead to greater accuracy and reduced bias in the evaluation of ML tools. Ideally, this will support making the testing of predictors more consitent and more objective. 
+
+The tool also allows researchers, to work with a large number of datasets, such that separate datasets may be used for training and testing, allowing a higher level of separation than most current methods, which maintain a holdout test set, or use cross validation, with each dataset. For example, a set of datasets may be used to determine good default hyperparameters for a tool, while a completely separate set of datasets may evaluate these. 
 
 ## Installation
 
@@ -74,7 +76,7 @@ display(summary_df)
 
 This compares the accuracy of the created decision tree and kNN classifiers on the collected datasets. 
 
-An example notebook provides further examples. 
+An example notebook and example .py file (TestMultiprocessing.py) provide further examples. 
 
 ## Methods
 
@@ -155,7 +157,7 @@ dataframe with a row for each dataset on openml meeting the specified set of cri
 
 
 ---
-## collect_datasets()
+### collect_datasets()
 
 ```
 def collect_data(max_num_datasets_used=-1,
@@ -167,6 +169,8 @@ def collect_data(max_num_datasets_used=-1,
                  path_local_cache="",
                  preview_data=False)
 ```
+
+This method reads in the datasets matching the parameters here and in the previous call to find_by_name(), find_by_tag(), or find_datasets(). These are stored by the DatasetTester object and are used for subsequent calls to run_tests() and run_tests_grid_search(). This method provides options for simple preprocessing of the data, such as filling NaN values and removing infinite values. However, for most preprocessing, such as scaling, imputing missing values, feature selection, etc, pipelines should be passed to the run_tests() and run_tests_grid_search() methods as opposed to plain predictors. Examples are provided in the example notebook. 
 
 #### Parameters
 **max_num_datasets_used**: integer 
@@ -202,7 +206,7 @@ Folder identify the local cache of datasets, stored in .csv format.
 Indicates if the first rows of each collected dataset should be displayed.
 
 
-**Return Type**
+#### Return Type**
 
 Returns reference to self.
 
@@ -213,13 +217,14 @@ If keep_duplicated_names is False, then only one version of each dataset name is
 
 ---
 
-## run_tests()
+### run_tests()
 
 ```
 run_tests(estimators_arr, num_cv_folds=5, scoring_metric='', show_warnings=False)
 ```
+This allows faster evaluation where multiprocessing is enabled, but this does make the screen output more difficult to follow, and makes it more difficult to resume from partial results if an earlier test failed part way through, as the set of tests completed may have gaps. 
 
-**Parameters**
+#### Parameters
 
 **estimators_arr**: array of tuples, with each tuple containing: 
         
@@ -228,35 +233,61 @@ run_tests(estimators_arr, num_cv_folds=5, scoring_metric='', show_warnings=False
 + str: a description of the hyperparameters used. For "Decision Tree", "min_samples_split=X, max_depth=X". For "kNN", "n_neighbors=X".
 + estimator: the estimator to be used. This should not be fit yet, just have the hyperparameters set as dt_X or kNN_X.
 
-**num_cv_folds**: (int)
+**num_cv_folds**: int
     
 The number of folds to be used in the cross validation process used to evaluate the predictor.
 
-**scoring_metric**: (str) 
+**scoring_metric**: str
     
 One of the set of scoring metrics supported by sklearn. Set to '' to indicate to use the default. The default for classification is f1_macro and for regression is neg_root_mean_squared_error.
 
-**show_warnings**: (bool) 
+**show_warnings**: bool
     
 if True, warnings will be presented for calls to cross_validate(). These can get very long in in some     cases may affect only a minority of the dataset-predictor combinations, so is False by default. Users may wish to set to True to determine the causes of any NaNs in the final summary dataframe.   
 
-**Return Type**
+**starting_point**: int
+
+This may be used to resume long-running tests where previous runs have not completed the full test or
+            where previous calls to this method set ending_point
+
+**ending_point**: int
+            
+This may be used to divide up the datasets, potentially to spread the work over a period of time, or 
+            to use some datasets purely for testing.
+
+**partial_result_folder**: string
+
+path to folder where partial results are saved. 
+
+**results_folder**: string
+
+path to folder where results are saved.         
+
+**run_parallel**: bool
+
+If set to True, the datasets will be tested in parallel. This speeds up computation, but is set to 
+            False by default as it makes the print output harder to follow and the process of recovering from
+            partial runs more complicated. The TestMultiProcessing.py file provides an example of its use. 
+
+
+
+#### Return Type
 
 A dataframe summarizing the performance of the estimators on each dataset. There is one row for each combination of dataset and estimator. 
 
 ---
-## run_subset_cvgridsearch()
+### run_subset_cvgridsearch()
 
 ---
-## get_dataset_collection()
+### get_dataset_collection()
 
 ---
-## get_dataset(dataset_name)
+### get_dataset(dataset_name)
 
 ---
-## summarize_results()
+### summarize_results()
 
 ---
-## plot_results()
+### plot_results()
 
 
