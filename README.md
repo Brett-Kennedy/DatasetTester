@@ -78,6 +78,14 @@ This compares the accuracy of the created decision tree and kNN classifiers on t
 
 An example notebook and example .py file (TestMultiprocessing.py) provide further examples. 
 
+## Example Files
+
+Two example files are provided
+
+**DatasetTester** is a notebook that provides basic examples of using the tool. This includes examples collecting datasets, running tests, and plotting the results. 
+
+**TestMultiProcessing** is a python file that evaluates running the tests in parallel, which can provide a quicker evaluation where many datasets are used. Running run_tests_parameter_search() is more expensive than run_tests() and can benefit more from parallel execution. 
+
 ## Methods
 
 ### find_by_name()
