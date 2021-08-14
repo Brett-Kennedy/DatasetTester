@@ -83,7 +83,7 @@ An example notebook and example .py file (TestMultiprocessing.py) provide furthe
 ### find_by_name()
 
 ```
-find_by_name(names_arr, problem_type)
+find_by_name(names_arr)
 ```
 Identifies, but does not collect, the set of datasets meeting the specified set of names. In many cases, multiple versions of the same file may be returned. 
 
@@ -91,19 +91,15 @@ Identifies, but does not collect, the set of datasets meeting the specified set 
 
 **names_arr** : array of dataset names
 
-**problem_type**: str
-
-Either "classification" or "regression". All estimators will be compared using the same metric, so it is necessary that all datasets used are of the same type.
-
 **Return Type**
 
 A dataframe with a row for each dataset on openml meeting the specified set of names.
+##
 
----
 ### find_by_tag()
 
 ```
-find_by_tag(my_tag, problem_type)
+find_by_tag(my_tag)
 ```
 Identifies, but does not collect, the set of datasets attached to the specified tag.
 
@@ -111,19 +107,15 @@ Identifies, but does not collect, the set of datasets attached to the specified 
 
 **my_tag** : a dataset tag
 
-**problem_type**: str
-
-Either "classification" or "regression". All estimators will be compared using the same metric, so it is necessary that all datasets used are of the same type.
-
 **Return Type**
 
 A dataframe with a row for each dataset on openml meeting the specified set of names.
+##
 
----
 ### find_datasets()
 
 ```
-find_datasets(   problem_type, 
+find_datasets(   use_cache=True,
                  min_num_classes=0,
                  max_num_classes=0,
                  min_num_minority_class=5,
@@ -145,11 +137,13 @@ collection of datasets have been identified.
 
 **Parameters**
 
-**problem_type**: str
+**use_cache**: bool
 
-Either "classification" or "regression". All estimators will be compared using the same metric, so it is necessary that all datasets used are of the same type.
+If set True, the local cache will be searched first to find the complete list of datasets available and the returned set will be a subset of this. If a cached file can not be found, openml.org will be queried. If set False, the local cache will not be examined.
 
-All other parameters are direct checks of the statistics about each dataset provided by openml.org.
+**Other Parameters**
+
+All other parameters are direct checks on the properties of the datasets returned by openml.org.
 
 **Return Type**
 
@@ -162,12 +156,19 @@ dataframe with a row for each dataset on openml meeting the specified set of cri
 ```
 def collect_data(max_num_datasets_used=-1,
                  method_pick_sets="pick_random",
+                 shuffle_random_state=0,
                  max_cat_unique_vals = 20,
+                 exclude_list=None,
+                 use_automatic_exclude_list=False,
+                 max_cat_unique_vals=20,
                  keep_duplicated_names=False,
-                 save_local_cache=False, 
-                 check_local_cache=False, 
-                 path_local_cache="",
-                 preview_data=False)
+                 check_local_cache=False,
+                 check_online=True,
+                 save_local_cache=False,
+                 preview_data=False,
+                 one_hot_encode=True,
+                 fill_nan_and_inf_zero=True,
+                 verbose=False):
 ```
 
 This method reads in the datasets matching the parameters here and in the previous call to find_by_name(), find_by_tag(), or find_datasets(). These are stored by the DatasetTester object and are used for subsequent calls to run_tests() and run_tests_grid_search(). This method provides options for simple preprocessing of the data, such as filling NaN values and removing infinite values. However, for most preprocessing, such as scaling, imputing missing values, feature selection, etc, pipelines should be passed to the run_tests() and run_tests_grid_search() methods as opposed to plain predictors. Examples are provided in the example notebook. 
@@ -214,13 +215,21 @@ Returns reference to self.
 
 This drops any categorical columns with more than max_cat_unique_vals unique values. 
 If keep_duplicated_names is False, then only one version of each dataset name is kept. This can reduce redundant test. In some cases, though, different versions of a dataset are significantly different. 
-
----
+##
 
 ### run_tests()
 
 ```
-run_tests(estimators_arr, num_cv_folds=5, scoring_metric='', show_warnings=False)
+run_tests(
+    estimators_arr,
+    num_cv_folds=5,
+    scoring_metric='',
+    show_warnings=False,
+    starting_point=0,
+    ending_point=np.inf,
+    partial_result_folder="",
+    results_folder="",
+    run_parallel=False)
 ```
 This allows faster evaluation where multiprocessing is enabled, but this does make the screen output more difficult to follow, and makes it more difficult to resume from partial results if an earlier test failed part way through, as the set of tests completed may have gaps. 
 
@@ -274,20 +283,63 @@ If set to True, the datasets will be tested in parallel. This speeds up computat
 #### Return Type
 
 A dataframe summarizing the performance of the estimators on each dataset. There is one row for each combination of dataset and estimator. 
+##
 
----
-### run_subset_cvgridsearch()
+### run_tests_parameter_search()
 
----
-### get_dataset_collection()
+```
+run_tests_parameter_search(
+    estimators_arr,
+    parameters_arr,
+    search_method='random',
+    num_cv_folds=5,
+    scoring_metric='',
+    show_warnings=False,
+    starting_point=0,
+    ending_point=np.inf,
+    partial_result_folder="",
+    results_folder="",
+    run_parallel=False)
+```
 
----
-### get_dataset(dataset_name)
+This may be run as an alternative to run_tests(), which assumes a certain set of hyperparameter for each predictor. This instead uses either grid search or random search to attempt to identify the best hyperparamters for each predictor, which may provide a fairer comparison between them. The majority of the parameters are the same as with run_tests() with the exceptions of the following:
 
----
+**parameters_arr**: dictionary
+
+Each dictionary describes the range of parameters to be tested on the matching estimator
+
+**search_method**: str
+
+Must be either "grid" or "random". This determines how the hyperparameter search is conducted.
+##
+
 ### summarize_results()
 
----
+```
+summarize_results(
+    summary_df, 
+    accuracy_metric, 
+    saved_file_name="", 
+    results_folder="", 
+    show_std_dev=False):
+```
+
+Returns a pandas dataframe summarizing the results, providing an overview of how each predictor did, averaged over all datasets used. 
+
+##
+
 ### plot_results()
+```
+plot_results(  
+    summary_df, 
+    accuracy_metric, 
+    saved_file_name="", 
+    results_folder="")
+```
+
+Returns an image of a plot summarizing the results, providing an overview of how each predictor did. The x-axis lists all datasets, ordered by the permance of the first predictor. For this purpose, it is recommended the first specified detector act as a baseline against which to compare the other detectors. A line is drawn for each detector, plotting it's score for each dataset. 
+
+##
+
 
 
