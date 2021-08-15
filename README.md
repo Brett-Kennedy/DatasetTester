@@ -156,9 +156,8 @@ All other parameters are direct checks on the properties of the datasets returne
 **Return Type**
 
 dataframe with a row for each dataset on openml meeting the specified set of criteria. 
+##
 
-
----
 ### collect_datasets()
 
 ```
@@ -223,6 +222,23 @@ Returns reference to self.
 
 This drops any categorical columns with more than max_cat_unique_vals unique values. 
 If keep_duplicated_names is False, then only one version of each dataset name is kept. This can reduce redundant test. In some cases, though, different versions of a dataset are significantly different. 
+##
+
+### get_dataset()
+
+```
+get_dataset(dataset_name)
+```
+"""
+Returns a single dataset.
+
+#### Parameters
+**dataset_name**: str
+
+The name as it appears in the openml list of datasets
+
+#### Return Type
+Returns both the X and y. Returns the first match if multiple versions are present.
 ##
 
 ### run_tests()
