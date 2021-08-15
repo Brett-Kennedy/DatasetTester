@@ -215,7 +215,7 @@ Folder identify the local cache of datasets, stored in .csv format.
 Indicates if the first rows of each collected dataset should be displayed.
 
 
-#### Return Type**
+#### Return Type
 
 Returns reference to self.
 
@@ -334,6 +334,31 @@ summarize_results(
 
 Returns a pandas dataframe summarizing the results, providing an overview of how each predictor did, averaged over all datasets used. 
 
+#### Parameters
+**summary_df**: pandas dataframe
+
+The results found calling run_tests() or run_tests_parameter_search()
+
+**accuracy_metric**: str
+
+The accuracy metric used in summary_df. This is one of the column headings
+
+**saved_file_name**: str
+
+The full path to the file saved in run_tests() or run_tests_parameter_search(). This will have been returned
+by the method
+
+**results_folder**: str
+
+path where the dataframe created here will be saved to disk
+
+**show_std_dev**: bool
+
+If True, the standard deviations between folds will be reported
+
+#### Return Type
+
+The pandas dataframe created by this function.
 ##
 
 ### plot_results()
@@ -347,6 +372,37 @@ plot_results(
 
 Returns an image of a plot summarizing the results, providing an overview of how each predictor did. The x-axis lists all datasets, ordered by the permance of the first predictor. For this purpose, it is recommended the first specified detector act as a baseline against which to compare the other detectors. A line is drawn for each detector, plotting it's score for each dataset. 
 
+Creates plots summarizing the results. This includes two plots:
+
+1. a pair of line graphs:
+    1. a line graph comparing each detector by accuracy. The x-axis lists the datasets arranged from lowest
+to highest accuracy on the first detector; the y-axis indicates the accuracy in the specified metric.
+A line is drawn for each detector.
+    2. a similar line graph comparing model complexity. This applies only to models such as decision trees
+where the complexity can be readily measured.
+2. a heatmap indicating how often each model is the most accurate and most interpretable. Where the complexity
+cannot be measured, this simply compares how often each model had the highest accuracy.
+
+#### Parameters
+
+**summary_df**: pandas dataframe
+The results found calling run_tests() or run_tests_parameter_search()
+
+**accuracy_metric**: str
+
+The accuracy metric used in summary_df. This is one of the column headings
+
+**saved_file_name**: str
+
+The full path to the file saved in run_tests() or run_tests_parameter_search(). This will have been returned
+by the method
+
+**results_folder**: str
+
+path where the dataframe created here will be saved to disk
+
+#### Return Type
+None
 ##
 
 
