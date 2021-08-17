@@ -3,10 +3,6 @@ DatasetTester is a tool to collect datasets from openml.org and make it easier t
 
 The tool also allows researchers, to work with a large number of datasets, such that separate datasets may be used for training and testing, allowing a higher level of separation than most current methods, which maintain a holdout test set, or use cross validation, with each dataset. For example, a set of datasets may be used to determine good default hyperparameters for a tool, while a completely separate set of datasets may evaluate these. 
 
-Contents:
-<!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
-<!-- /TOC -->
-
 ## Installation
 
 `
@@ -91,6 +87,7 @@ Two example files are provided
 **TestMultiProcessing** is a python file that evaluates running the tests in parallel, which can provide a quicker evaluation where many datasets are used. Running run_tests_parameter_search() is more expensive than run_tests() and can benefit more from parallel execution. 
 
 ## Methods
+<a id="Methods"></a>
 
 ### find_by_name()
 
