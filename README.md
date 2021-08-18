@@ -109,20 +109,13 @@ plot_results() creates a line graphs and heat map giving an overview of how each
 
 Two example files are provided:
 
-[DatasetTest](https://github.com/Brett-Kennedy/DatasetsEvaluator/blob/main/examples/DatasetTester.ipynb) provides some simple examples using the tool.
+[DatasetTest](https://github.com/Brett-Kennedy/DatasetsEvaluator/blob/main/examples/DatasetTester.ipynb) provides some simple examples using the tool. This includes examples collecting datasets, running tests, and plotting the results. 
 
-[TestMultiProcessing](https://github.com/Brett-Kennedy/DatasetsEvaluator/blob/main/examples/TestMultiProcessing.py) provides an example using multiprocessing. It compares the time to do a simple comparison sequentially. vs multiprocessing. 
+[TestMultiProcessing](https://github.com/Brett-Kennedy/DatasetsEvaluator/blob/main/examples/TestMultiProcessing.py) provides an example using multiprocessing. It compares the time to do a simple comparison sequentially. vs multiprocessing. Running run_tests_parameter_search() is more expensive than run_tests() and can benefit more from parallel execution. 
 
 ## Consistent vs Random Datasets
 The API allows for both testing with a consistent and a random set of datasets. For more robust testing and to reduce overfitting, it it recommended to use random datasets. However for purposes such as debugging and confirming results, using consistent datasets is useful. The collect_data() function determines the set of datasets used for the subsequent calls to run_tests() and run_tests_parameter_search(). This includes the parameters method_pick_sets and shuffle_random_state. These are used if the test to be run uses less datasets than the full set matching the specifications provided in the proceeding call to find_datasets() and the current call to collect_data(). In these cases, either the first matching files or a random subset may be used. 
 
-## Example Files
-
-Two example files are provided
-
-**DatasetTester** is a notebook that provides basic examples of using the tool. This includes examples collecting datasets, running tests, and plotting the results. 
-
-**TestMultiProcessing** is a python file that evaluates running the tests in parallel, which can provide a quicker evaluation where many datasets are used. Running run_tests_parameter_search() is more expensive than run_tests() and can benefit more from parallel execution. 
 
 ## Methods
 <a id="Methods"></a>
