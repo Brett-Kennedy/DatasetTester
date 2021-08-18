@@ -78,6 +78,44 @@ This compares the accuracy of the created decision tree and kNN classifiers on t
 
 An example notebook and example .py file (TestMultiprocessing.py) provide further examples. 
 
+## Features
+
+### Caching of datasets and information about datasets
+As accessing datasets, particularly a large number of datasets, may be time-consuming, DatasetsEvaluator provides the ability to cache datasets locally for for later use. As well, the complete list of datasets available may be cached and examined at any time. This allow faster iterations, but also uninterupted work offline. 
+
+The find_datasets() method includes a parameter, use_cache. If set, the cache is checked before going to openml.org, and if the set of available datasets is collected from openml.org, it is saved to cache. DatasetsEvaluator is designed to fully work, once a collection of datasets have been downloaded, without internet. At the same time, caching is not necessary, and users are free to access the datasets through the internet as desired. 
+
+### Multiprocessing
+For running comparison tests on datasets in order to evaluate detectors, it is possible to execute the tests in parallel, which may allow for higher throughput depending on your hardware. Both run_tests() and run_tests_parameter_search() provide a run_parallel option. 
+
+### Recovery
+With long-running tests, it's possible to encounter software errors or other issues the halt the execution. DatasetsEvaluator allows you to continue from where the test finished. If the partial_result_folder parameter is specified for run_tests() and run_tests_parameter_search(), a directory of the specified name will be created, which will hold the intermediate results, one .csv file per original dataset. These will be numbered sequentially, though their may be gaps if run_parallel is specified. If execution completes normally, the partial results folder will be deleted. Otherwise, users may continue using the start_point parameter, which specifies the number of the dataset to continue from. 
+
+### Results Visualizations
+Visualizations of the results may be created once the execution of run_tests() or run_tests_parameter_search() is complete. 
+
+summarize_results() creates a simple tabular summarization of the full results .csv file and saves this to another .csv file. 
+
+plot_results() creates a line graphs and heat map giving an overview of how each model performed on each dataset relative to each other. Details are provided below. Examples are given in the example notebook, described below, and in other projects using DatasetsEvaluator:
+
+[RotationFeatures](https://github.com/Brett-Kennedy/RotationFeatures) 
+
+[ikNN](https://github.com/Brett-Kennedy/ikNN)
+
+[AdditiveDecisionTrees](https://github.com/Brett-Kennedy/AdditiveDecisionTree)
+
+
+## Example Files
+
+Two example files are provided:
+
+[DatasetTest](https://github.com/Brett-Kennedy/DatasetsEvaluator/blob/main/examples/DatasetTester.ipynb) provides some simple examples using the tool.
+
+[TestMultiProcessing](https://github.com/Brett-Kennedy/DatasetsEvaluator/blob/main/examples/TestMultiProcessing.py) provides an example using multiprocessing. It compares the time to do a simple comparison sequentially. vs multiprocessing. 
+
+## Consistent vs Random Datasets
+The API allows for both testing with a consistent and a random set of datasets. For more robust testing and to reduce overfitting, it it recommended to use random datasets. However for purposes such as debugging and confirming results, using consistent datasets is useful. The collect_data() function determines the set of datasets used for the subsequent calls to run_tests() and run_tests_parameter_search(). This includes the parameters method_pick_sets and shuffle_random_state. These are used if the test to be run uses less datasets than the full set matching the specifications provided in the proceeding call to find_datasets() and the current call to collect_data(). In these cases, either the first matching files or a random subset may be used. 
+
 ## Example Files
 
 Two example files are provided
