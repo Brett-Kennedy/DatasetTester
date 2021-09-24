@@ -1,18 +1,20 @@
 # DatasetsEvaluator
-DatasetTester is a tool to collect datasets from openml.org and make it easier to test predictors (classifiers or regressors) against these files. Our hope is this eases the work required to test predictors and so encourages researchers to test predictors against larger numbers of datasets, taking greater advantage of the collection on openml.org. Ideally, this can lead to greater accuracy and reduced bias in the evaluation of ML tools. Ideally, this will support making the testing of predictors more consitent and more objective. 
+DatasetTester is a tool to collect datasets from openml.org and make it easier to test predictors (classifiers or regressors) against these files. Our hope is this eases the work required to test predictors and so encourages researchers to test predictors against larger numbers of datasets, taking greater advantage of the collection on openml.org. Ideally, this can lead to greater accuracy and reduced bias in the evaluation of ML tools. Ideally as well, this will support making the testing of predictors more consitent and more objective. 
 
-The tool also allows researchers, to work with a large number of datasets, such that separate datasets may be used for training and testing, allowing a higher level of separation than most current methods, which maintain a holdout test set, or use cross validation, with each dataset. For example, a set of datasets may be used to determine good default hyperparameters for a tool, while a completely separate set of datasets may evaluate these. 
+The tool also allows researchers, to work with a large number of datasets, such that separate datasets may be used for training and testing, allowing a higher level of separation than most current methods, which maintain a holdout test set, or use cross validation, within each dataset, but generally do not hold out entire datasets strictly for testing. For example, a set of datasets may be used to determine good default hyperparameters for a tool, while a completely separate set of datasets may evaluate these. 
+
+openml.org provides an excellent API, which this is based on. In many cases, it will be simpler for researchers to simply use openml.org's API. However, this tool provides a number of features (including caching, timeouts, recovery from failure, parallel testing) which make it convenient to use, and robust in the event of connectivity or server issues. This tool also provides checking on the column types, as the categorical/numeric column indicators can be incorrect in rare cases.  
 
 ## Installation
 
 `
 pip install DatasetsEvaluator
 `
-
+It is also possible to do a git clone. Only the DatasetsEvaluator.py file is necessary to use the tool. 
     
 ## Examples
 
-The tool works by calling a series of methods: First: find_datasets() (or find_by_name()). Second: collect_data(). And finally: run_tests(). For example:
+The tool, in most cases, works by calling the following series of methods: First: find_datasets() (or find_by_name()). Second: collect_data(). And finally: run_tests(). For example:
 
 ```python
 from DatasetsEvaluator import DatasetsEvaluator as de
@@ -104,6 +106,9 @@ plot_results() creates a line graphs and heat map giving an overview of how each
 
 [AdditiveDecisionTrees](https://github.com/Brett-Kennedy/AdditiveDecisionTree)
 
+A simple example taken from the example notebook:
+![Simple Example](https://github.com/Brett-Kennedy/DatasetsEvaluator/blob/main/evaluator_ex.png)
+This compares decision tree and kNN detectors with respect to accuracy and model complexity for a set of five datasets. A small number of datasets were used to simplify the example, but the thrust of this project is that many datasets may be used, with at least fifty, if not over one hundred used. 
 
 ## Example Files
 
