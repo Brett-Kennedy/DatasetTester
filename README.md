@@ -10,6 +10,7 @@ openml.org provides an excellent API, which this is based on. In many cases, it 
 `
 pip install DatasetsEvaluator
 `
+
 It is also possible to do a git clone. Only the DatasetsEvaluator.py file is necessary to use the tool. 
     
 ## Examples
