@@ -1,9 +1,9 @@
 # DatasetsEvaluator
-DatasetTester is a tool to collect datasets from openml.org and make it easier to test predictors (classifiers or regressors) against these files. Our hope is this eases the work required to test predictors and so encourages researchers to test predictors against larger numbers of datasets, taking greater advantage of the collection on openml.org. Ideally, this can lead to greater accuracy and reduced bias in the evaluation of ML tools. Ideally as well, this will support making the testing of predictors more consitent and more objective. 
+DatasetsEvaluator is a tool to collect datasets from openml.org and make it easier to test predictors (classifiers or regressors) against these files. Our hope is this eases the work required to test predictors and so encourages researchers to test predictors against larger numbers of datasets, taking greater advantage of the collection on openml.org. Ideally, this can lead to greater accuracy and reduced bias in the evaluation of ML tools. Ideally as well, this will support making the testing of predictors more consitent and more objective. 
 
-The tool also allows researchers, to work with a large number of datasets, such that separate datasets may be used for training and testing, allowing a higher level of separation than most current methods, which maintain a holdout test set, or use cross validation, within each dataset, but generally do not hold out entire datasets strictly for testing. For example, a set of datasets may be used to determine good default hyperparameters for a tool, while a completely separate set of datasets may evaluate these. 
+The tool also allows researchers to work with a large number of datasets, such that separate datasets may be used for training and testing, allowing a higher level of separation between training and testing than most current methods, which maintain a holdout test set, or use cross validation, within each dataset, but generally do not hold out entire datasets strictly for testing. For example, a set of datasets may be used to determine good default hyperparameters for a tool, while a completely separate set of datasets may evaluate these. 
 
-openml.org provides an excellent API, which this is based on. In many cases, it will be simpler for researchers to simply use openml.org's API. However, this tool provides a number of features (including caching, timeouts, recovery from failure, parallel testing) which make it convenient to use, and robust in the event of connectivity or server issues. This tool also provides checking on the column types, as the categorical/numeric column indicators can be incorrect in rare cases.  
+openml.org provides an excellent API, which this is based on. In many cases, it will be simpler for researchers to simply use openml.org's API, or sklearn's fetch_openml() API. However, this tool provides a number of features (including caching, timeouts, recovery from failure, parallel testing) which make it convenient to use, and robust in the event of connectivity or server issues. This tool also provides checking on the column types, as the categorical/numeric column indicators can be incorrect in rare cases.  
 
 ## Installation
 
@@ -59,7 +59,7 @@ This will return all datasets identified by the previous call to find_datasets()
 datasets_tester.collect_data(max_num_datasets_used=5, method_pick_sets='pick_first', keep_duplicated_names=False)
 ```
 
-This collects the first 5 datasets found above. Note though, as keep_duplicated_names=False is specified, in cases where openml.org has multiple datasets with the same name, but different versions, only the last version will be collected.
+This collects the first 5 datasets found above. Note though, as keep_duplicated_names=False is specified here, in cases where openml.org has multiple datasets with the same name, but different versions, only the last version will be collected.
 
 A call to run_tests() may then be made to test one or more predictors on the collected datasets. For example:
 
@@ -84,22 +84,22 @@ An example notebook and example .py file (TestMultiprocessing.py) provide furthe
 ## Features
 
 ### Caching of datasets and information about datasets
-As accessing datasets, particularly a large number of datasets, may be time-consuming, DatasetsEvaluator provides the ability to cache datasets locally for for later use. As well, the complete list of datasets available may be cached and examined at any time. This allow faster iterations, but also uninterupted work offline. 
+As accessing datasets, particularly a large number of datasets, may be time-consuming, DatasetsEvaluator provides the ability to cache datasets locally for later use. As well, the complete list of datasets available may be cached and examined at any time. This allow faster iterations, but also uninterupted work offline. 
 
-The find_datasets() method includes a parameter, use_cache. If set, the cache is checked before going to openml.org, and if the set of available datasets is collected from openml.org, it is saved to cache. DatasetsEvaluator is designed to fully work, once a collection of datasets have been downloaded, without internet. At the same time, caching is not necessary, and users are free to access the datasets through the internet as desired. 
+The find_datasets() method includes a parameter, use_cache. If set, the cache is checked before going to openml.org, and if the set of available datasets is collected from openml.org, it is saved to cache. DatasetsEvaluator is designed to fully work, once a collection of datasets have been downloaded, without network connection. At the same time, caching is not necessary, and users are free to access the datasets through the internet as desired. 
 
 ### Multiprocessing
 For running comparison tests on datasets in order to evaluate detectors, it is possible to execute the tests in parallel, which may allow for higher throughput depending on your hardware. Both run_tests() and run_tests_parameter_search() provide a run_parallel option. 
 
 ### Recovery
-With long-running tests, it's possible to encounter software errors or other issues the halt the execution. DatasetsEvaluator allows you to continue from where the test finished. If the partial_result_folder parameter is specified for run_tests() and run_tests_parameter_search(), a directory of the specified name will be created, which will hold the intermediate results, one .csv file per original dataset. These will be numbered sequentially, though their may be gaps if run_parallel is specified. If execution completes normally, the partial results folder will be deleted. Otherwise, users may continue using the start_point parameter, which specifies the number of the dataset to continue from. 
+With long-running tests, it's possible to encounter software errors or other issues that halt execution. DatasetsEvaluator allows you to continue from where the test finished. If the partial_result_folder parameter is specified for run_tests() and run_tests_parameter_search(), a directory of the specified name will be created, which will hold the intermediate results, one .csv file per original dataset. These will be numbered sequentially, though their may be gaps if run_parallel is specified. If execution completes normally, the partial results folder will be deleted. Otherwise, users may continue using the start_point parameter, which specifies the number of the dataset to continue from. 
 
 ### Results Visualizations
 Visualizations of the results may be created once the execution of run_tests() or run_tests_parameter_search() is complete. 
 
 summarize_results() creates a simple tabular summarization of the full results .csv file and saves this to another .csv file. 
 
-plot_results() creates a line graphs and heat map giving an overview of how each model performed on each dataset relative to each other. Details are provided below. Examples are given in the example notebook, described below, and in other projects using DatasetsEvaluator:
+plot_results() creates a line graph and heatmap giving an overview of how each model performed on each dataset relative to each other. Details are provided below. Examples are given in the example notebook, described below, and in other projects using DatasetsEvaluator:
 
 [RotationFeatures](https://github.com/Brett-Kennedy/RotationFeatures) 
 
@@ -120,7 +120,7 @@ Two example files are provided:
 [TestMultiProcessing](https://github.com/Brett-Kennedy/DatasetsEvaluator/blob/main/examples/TestMultiProcessing.py) provides an example using multiprocessing. It compares the time to do a simple comparison sequentially. vs multiprocessing. Running run_tests_parameter_search() is more expensive than run_tests() and can benefit more from parallel execution. 
 
 ## Consistent vs Random Datasets
-The API allows for both testing with a consistent and a random set of datasets. For more robust testing and to reduce overfitting, it it recommended to use random datasets. However for purposes such as debugging and confirming results, using consistent datasets is useful. The collect_data() function determines the set of datasets used for the subsequent calls to run_tests() and run_tests_parameter_search(). This includes the parameters method_pick_sets and shuffle_random_state. These are used if the test to be run uses less datasets than the full set matching the specifications provided in the proceeding call to find_datasets() and the current call to collect_data(). In these cases, either the first matching files or a random subset may be used. 
+The API allows for both testing with a consistent and a random set of datasets. For more robust testing and to reduce overfitting, it is recommended to use random datasets. However for purposes such as debugging and confirming results, using consistent datasets is useful. The collect_data() function determines the set of datasets used for the subsequent calls to run_tests() and run_tests_parameter_search(). This includes the parameters method_pick_sets and shuffle_random_state. These are used if the test to be run uses less datasets than the full set matching the specifications provided in the proceeding call to find_datasets() and the current call to collect_data(). In these cases, either the first matching files or a random subset may be used. 
 
 
 ## Methods
@@ -163,7 +163,7 @@ A dataframe with a row for each dataset on openml meeting the specified set of n
 ```
 find_datasets(   use_cache=True,
                  min_num_classes=0,
-                 max_num_classes=0,
+                 max_num_classes=100,
                  min_num_minority_class=5,
                  max_num_minority_class=np.inf, 
                  min_num_features=0,
