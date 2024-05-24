@@ -19,7 +19,7 @@ from multiprocessing import Process, Queue
 
 def get_single_dataset(q, dataset_did, dataset_name):
     dataset = openml.datasets.get_dataset(dataset_did)
-    print(f" Loaded {dataset_name}  from openml.org")
+    print(f" Loading {dataset_name} from openml.org")
     q.put(dataset)
 
 
@@ -46,6 +46,7 @@ class DatasetsTester:
         self.problem_type = problem_type
         self.path_local_cache = path_local_cache
         self.openml_df = None
+        self.scoring_metric = ""
 
     def check_problem_type(self):
         problem_type_okay = self.problem_type in ["classification", "regression", "both"]
@@ -53,13 +54,16 @@ class DatasetsTester:
             print("problem_type must be one of: 'classification', 'regression', 'both'")
         return problem_type_okay
 
-    def find_by_name(self, names_arr):
+    def find_by_name(self, names_arr, use_cache=False):
         """
         Identifies, but does not collect, the set of datasets meeting the specified set of names.
 
         Parameters
         ----------
         names_arr: array of dataset names
+
+        use_cache: bool
+            If True, the local cache will be checked for the file.
 
         Returns
         -------
@@ -68,7 +72,8 @@ class DatasetsTester:
         """
         if not self.check_problem_type():
             return None
-        self.openml_df = openml.datasets.list_datasets(output_format="dataframe")
+        #self.openml_df = openml.datasets.list_datasets(output_format="dataframe")
+        self.__get_datasets_list(use_cache)
         self.openml_df = self.openml_df[self.openml_df.name.isin(names_arr)]
         return self.openml_df
 
@@ -124,6 +129,7 @@ class DatasetsTester:
             print("For classification datasets, both min_num_classes and max_num_classes must be specified.")
             return None
 
+        '''
         read_dataset_list = False  # Set True if manage to read from cache. Otherwise read from openml.org.
         if use_cache and self.path_local_cache != "":
             try:
@@ -146,6 +152,8 @@ class DatasetsTester:
                     print(f"Error creating local cache folder: {e}")
                 path_to_file = self.path_local_cache + "/dataset_list.csv"
                 self.openml_df.to_csv(path_to_file)
+        '''
+        self.__get_datasets_list(use_cache)
 
         # Filter out datasets where some key attributes are unspecified
         self.openml_df = self.openml_df[
@@ -187,6 +195,30 @@ class DatasetsTester:
             self.openml_df = self.openml_df[self.openml_df.NumberOfClasses == 0]
 
         return self.openml_df
+
+    def __get_datasets_list(self, use_cache):
+        read_dataset_list = False  # Set True if manage to read from cache. Otherwise read from openml.org.
+        if use_cache and self.path_local_cache != "":
+            try:
+                path_to_file = self.path_local_cache + "/dataset_list.csv"
+                self.openml_df = pd.read_csv(path_to_file)
+                read_dataset_list = True
+            except Exception as e:
+                if "No such file or directory:" not in str(e):
+                    print(f" Error reading file: {e}")
+                else:
+                    print(" File not found in cache.")
+        if not read_dataset_list:
+            self.openml_df = openml.datasets.list_datasets(output_format="dataframe")
+            if use_cache and self.path_local_cache != "":
+                try:
+                    mkdir(self.path_local_cache)
+                except FileExistsError:
+                    pass
+                except Exception as e:
+                    print(f"Error creating local cache folder: {e}")
+                path_to_file = self.path_local_cache + "/dataset_list.csv"
+                self.openml_df.to_csv(path_to_file)
 
     def collect_data(self,
                      max_num_datasets_used=-1,
@@ -313,7 +345,6 @@ class DatasetsTester:
 
         self.dataset_collection = []
 
-        #if max_num_datasets_used > -1 and max_num_datasets_used < len(self.openml_df) and method_pick_sets == "pick_random":
         if -1 < max_num_datasets_used < len(self.openml_df) and method_pick_sets == "pick_random":
             openml_subset_df = self.openml_df.sample(frac=1, random_state=shuffle_random_state)
         else:
@@ -410,7 +441,7 @@ class DatasetsTester:
             if dataset_source == "cache":
                 print(f" Reading from local cache: {usable_dataset_idx}, id: {dataset_did}, name: {dataset_name}")
             else:
-                print(f" Loading dataset from openml: {usable_dataset_idx}, id: {dataset_did}, name: {dataset_name}")
+                print(f" Loaded dataset from openml: {usable_dataset_idx}, id: {dataset_did}, name: {dataset_name}")
 
             dataset_df = self.__clean_dataset(dataset_df, max_cat_unique_vals, one_hot_encode,
                                               fill_nan_and_inf_zero)
@@ -483,6 +514,7 @@ class DatasetsTester:
 
     def run_tests(self,
                   estimators_arr,
+                  feature_selection_func=None,
                   num_cv_folds=5,
                   scoring_metric='',
                   show_warnings=False,
@@ -501,6 +533,11 @@ class DatasetsTester:
             str: a description of the features used
             str: a description of the hyper-parameters used
             estimator: the estimator to be used. This should not be fit yet, just have the hyper-parameters set.
+
+        feature_selection_func: function
+            Optional function, used to select the features used. The specified function must accept the parameters
+            X and y, representing the data in the form of a pandas dataframe and series, and must return a
+            new version of X with the same or less columns.
 
         num_cv_folds: int
             the number of folds to be used in the cross validation process used to evaluate the predictor
@@ -554,6 +591,7 @@ class DatasetsTester:
                 scoring_metric = 'neg_root_mean_squared_error'
         else:
             assert False, "problem type must be 'classification' or 'regression' if running tests. "
+        self.scoring_metric = scoring_metric
 
         # Dataframes used to store the test results
         column_names = ['Dataset Index',
@@ -587,6 +625,7 @@ class DatasetsTester:
             summary_df = self.run_subset(summary_df,
                                          starting_point,
                                          ending_point,
+                                         feature_selection_func,
                                          partial_result_folder,
                                          num_cv_folds,
                                          scoring_metric,
@@ -601,6 +640,7 @@ class DatasetsTester:
                                         summary_df,
                                         dataset_idx,
                                         dataset_idx,
+                                        feature_selection_func,
                                         partial_result_folder,
                                         num_cv_folds,
                                         scoring_metric,
@@ -626,15 +666,18 @@ class DatasetsTester:
 
         return summary_df.reset_index(drop=True), summary_file_name
 
-    def run_subset(self, summary_df, starting_point, ending_point, partial_result_folder, num_cv_folds, scoring_metric,
-                   scoring_metric_specified):
+    def run_subset(self, summary_df, starting_point, ending_point, feature_selection_func, partial_result_folder,
+                   num_cv_folds, scoring_metric, scoring_metric_specified):
         for dataset_dict in self.dataset_collection:
-            # dataset_index, dataset_name, version, X, y = dataset_tuple
             dataset_index = dataset_dict['Index']
             dataset_name = dataset_dict['Dataset_name']
             version = dataset_dict['Dataset_version']
             X = dataset_dict['X']
             y = dataset_dict['y']
+
+            if feature_selection_func:
+                X = feature_selection_func(X, y)
+
             # Normally the dataset_index values are sequential within the dataset_collection, but
             # this handles where they are not. 
             if dataset_index < starting_point:
@@ -710,6 +753,8 @@ class DatasetsTester:
         Parameters
         ----------
         All parameters are the same as in run_tests() with the addition of:
+
+        estimators_arr: <fill in> #todo: add all parameters to the docstring
 
         parameters_arr: array of dictionaries
             Each dictionary describes the range of parameters to be tested on the matching estimator
@@ -898,10 +943,11 @@ class DatasetsTester:
 
         return summary_df
 
-    def summarize_results(self, summary_df, accuracy_metric, saved_file_name="", results_folder="", show_std_dev=False):
+    def summarize_results(self, summary_df, accuracy_metric="", saved_file_name="", results_folder="", show_std_dev=False):
         """
-        Creates a 2nd results dataframe, summarizing the first data frame by dataset. This is returned and written
-        to disk.
+        Creates a 2nd results dataframe, summarizing the first data frame by dataset. This is returned and
+        optionally written to disk. The returned dataframe has one row per model type, summarizing over all
+        datasets for that model type.
 
         Parameters
         ----------
@@ -909,7 +955,7 @@ class DatasetsTester:
             The results found calling run_tests() or run_tests_parameter_search()
 
         accuracy_metric: str
-            The accuracy metric used in summary_df. This is one of the column headings
+            The accuracy metric used in summary_df. This is one of the column headings.
 
         saved_file_name: str
             The full path to the file saved in run_tests() or run_tests_parameter_search(). This will have been returned
@@ -928,22 +974,22 @@ class DatasetsTester:
 
         if len(summary_df) == 0:
             return
-        p = pd.DataFrame(summary_df.groupby(['Model', 'Feature Engineering Description'])[accuracy_metric].mean())
+        if accuracy_metric == "":
+            accuracy_metric = "Avg " + self.scoring_metric
+        g = summary_df.groupby(['Model', 'Feature Engineering Description', 'Hyperparameter Description'], sort=False)
+        p = pd.DataFrame(g[accuracy_metric].mean())
         if show_std_dev:
-            p['Avg. Std dev between folds'] = summary_df.groupby(['Model', 'Feature Engineering Description'])[
-                'Std dev between folds'].mean()
-        p['Avg. Train-Test Gap'] = summary_df.groupby(['Model', 'Feature Engineering Description'])[
-            'Train-Test Gap'].mean()
-        p['Avg. Fit Time'] = summary_df.groupby(['Model', 'Feature Engineering Description'])['Fit Time'].mean()
-        if summary_df.groupby(['Model', 'Feature Engineering Description'])['Model Complexity'].sum().any() > 0.0:
-            p['Avg. Complexity'] = summary_df.groupby(['Model', 'Feature Engineering Description'])[
-                'Model Complexity'].mean()
+            p['Avg. Std dev between folds'] = g['Std dev between folds'].mean()
+        p['Avg. Train-Test Gap'] = g['Train-Test Gap'].mean()
+        p['Avg. Fit Time'] = g['Fit Time'].mean()
+        if g['Model Complexity'].sum().any() > 0.0:
+            p['Avg. Complexity'] = g['Model Complexity'].mean()
         if saved_file_name and results_folder:
             results_summary_filename = results_folder + "\\" + saved_file_name + "_summarized" + ".csv"
             p.to_csv(results_summary_filename, index=True)
         return p
 
-    def plot_results(self, summary_df, accuracy_metric, saved_file_name="", results_folder=""):
+    def plot_results(self, summary_df, accuracy_metric="", saved_file_name="", results_folder=""):
         """
         Creates plots summarizing the results. This includes two plots:
         1) a pair of line graphs:
@@ -982,7 +1028,7 @@ class DatasetsTester:
             sns.set()
 
             def set_axis(ax, labels):
-                ax.xaxis.set_tick_params(rotation=55)
+                ax.xaxis.set_tick_params(rotation=90)
                 ax.xaxis.set_ticks_position('bottom')
                 ax.xaxis.set_tick_params(which='major', labelsize=6)
                 ax.set_xticks(np.arange(0, len(labels)))
@@ -992,7 +1038,7 @@ class DatasetsTester:
             # Collect the set of all combinations of model type and feature engineering. In this example, there
             # should just be the two.
             combinations_df = summary_df.groupby(
-                ['Model', 'Feature Engineering Description', 'Hyperparameter Description']).size().reset_index()
+                ['Model', 'Feature Engineering Description', 'Hyperparameter Description'], sort=False).size().reset_index()
 
             summary_df = summary_df.dropna(subset=[accuracy_metric])
 
@@ -1000,8 +1046,6 @@ class DatasetsTester:
             fig_width = max(fig_width, 5)
             show_complexity_plot = summary_df['Model Complexity'].sum() > 0
             fig, ax = plt.subplots(nrows=1+show_complexity_plot, ncols=1, figsize=(fig_width, 10))
-            #sns.set_theme(style="darkgrid")
-            #sns.set()
 
             ax0 = ax
             if show_complexity_plot:
@@ -1052,10 +1096,11 @@ class DatasetsTester:
                 ax[1].set_title("Model Complexity by dataset")
 
             t = subset_df_1['Dataset']
+            t = [x[:15] + "..." if len(x) > 15 else x for x in t]
             ax0.legend(bbox_to_anchor=(1.05, 1))
             #for ax_ in ax:
             #    set_axis(ax_, t)
-            set_axis(ax0, t)
+            set_axis(ax[1], t)
 
             plt.subplots_adjust(hspace=0.5)
             if saved_file_name and results_folder:
@@ -1084,8 +1129,10 @@ class DatasetsTester:
                         eng_name = row['Feature Engineering Description']
                         param_name = row['Hyperparameter Description']
                         name = model_name
-                        if eng_name: name += "(" + eng_name + ")"
-                        if param_name: name += "(" + param_name + ")"
+                        if eng_name:
+                            name += "(" + eng_name + ")"
+                        if param_name:
+                            name += "(" + param_name + ")"
                         names_arr.append(name)
 
                 acc_col = summary_df.loc[group.index].loc[:, accuracy_metric].astype(float).reset_index(drop=True)
@@ -1095,6 +1142,9 @@ class DatasetsTester:
                 min_compl_idx = int_col.idxmin()
 
                 output_matrix[min_compl_idx][max_acc_idx] += 1
+
+            if not output_matrix:
+                return
 
             fig, ax = plt.subplots()
             ax.imshow(output_matrix, cmap='Blues', interpolation="nearest")
@@ -1137,6 +1187,9 @@ class DatasetsTester:
                 results_plot_filename = results_folder + "\\" + saved_file_name + "_heatmap" + ".png"
                 fig.savefig(results_plot_filename, bbox_inches='tight', dpi=150)
 
+        if accuracy_metric == "":
+            accuracy_metric = "Avg " + self.scoring_metric
+
         line_plot(summary_df)
         heatmap_plot(summary_df)
 
@@ -1156,6 +1209,15 @@ class DatasetsTester:
             for est in estimators_arr:
                 total_num_nodes += len(est.tree_.feature)
             model_complexity = total_num_nodes / len(estimators_arr)
+        elif hasattr(estimators_arr[0], "coef_"):
+            model_complexity = 0
+            for est in estimators_arr:
+                coef_arr = est.coef_
+                if est.coef_.ndim > 1:
+                    coef_arr = est.coef_[0]
+                non_zero_coefs = [x for x in coef_arr if x != 0]
+                model_complexity += len(non_zero_coefs)
+            model_complexity = model_complexity / len(estimators_arr)
         else:
             model_complexity = 0
         return model_complexity
